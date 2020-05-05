@@ -1,38 +1,58 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 module Main where
 
+import Control.Monad.Trans.Reader
 import Data.Text (Text)
+
 import Happstack.Lite
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
+import BlogConfig
 import Pages.Post
-import Pages.Default (aboutHblogPage, homePage)
+import Pages.Default (aboutPage, aboutHblogPage, homePage)
 
 serverConfig = defaultServerConfig { port = 8000 }
+
+blogConfig = BlogConfig
+    "Sample blog"
+    "Jamie Hoffmann"
+    "A sample blog about something blah blah.\nWhatever and ever!"
+
 
 main :: IO ()
 main = do
     putStrLn $ "Running at http://localhost:" ++ (show $ port serverConfig)
-    serve (Just serverConfig) myApp
+    serve (Just serverConfig) (myApp blogConfig)
 
-myApp :: ServerPart Response
-myApp = msum
-    [ dir "ping"        $ ping
-    , dir "hblog"       $ hblog
-    , dir "post"        $ post
-    , Main.homePage
-    ]
+-- load in config before this point so that it can be hot-reloaded while
+-- separate from rest of application
+myApp :: BlogConfig -> ServerPart Response
+myApp config = do
+    msum
+        [ dir "ping"        $ ping config
+        , dir "about"       $ about config
+        , dir "hblog"       $ hblog config
+        , dir "post"        $ post config
+        , dir "files"       $ serveDirectory DisableBrowsing [] "./wwwroot"
+        , Main.homePage config
+        ]
 
-homePage :: ServerPart Response
-homePage = ok $ toResponse $ Pages.Default.homePage
+homePage :: BlogConfig -> ServerPart Response
+homePage config = ok $ toResponse $ runReader Pages.Default.homePage config
 
-post :: ServerPart Response
-post = ok $ toResponse $
-    postPage "page title" $ H.p "Body text"
+post :: BlogConfig -> ServerPart Response
+post config = path $ \(postId :: String) ->
+    retrievePageResponse config postId
 
-ping :: ServerPart Response
-ping = ok $ toResponse $ ("OK" :: Text)
+retrievePageResponse :: BlogConfig -> String -> ServerPart Response
+retrievePageResponse config postId = ok $ toResponse $ runReader (postPage postId $ H.toHtml postId) config 
 
-hblog :: ServerPart Response
-hblog = ok $ toResponse $ aboutHblogPage
+ping :: BlogConfig -> ServerPart Response
+ping _ = ok $ toResponse $ ("OK" :: Text)
+
+about :: BlogConfig -> ServerPart Response
+about config = ok $ toResponse $ runReader aboutPage config
+
+hblog :: BlogConfig -> ServerPart Response
+hblog config = ok $ toResponse $ runReader aboutHblogPage config

@@ -52,7 +52,8 @@ executable hblog
 
   -- Modules included in this executable, other than Main.
   other-modules:       Pages.Post,
-                       Pages.Default
+                       Pages.Default,
+                       BlogConfig
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
@@ -61,7 +62,9 @@ executable hblog
   build-depends:       base ^>=4.12.0.0,
                        happstack-lite,
                        text,
-                       blaze-html
+                       blaze-html,
+                       split,
+                       transformers
 
   -- Directories containing source files.
   -- hs-source-dirs:

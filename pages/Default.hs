@@ -1,31 +1,57 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Pages.Default (pageTemplate, homePage, aboutHblogPage) where
+module Pages.Default (pageTemplate, homePage, aboutPage, aboutHblogPage) where
+
+import Control.Monad.Trans.Reader
 
 import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
-pageTemplate :: String -> H.Html -> H.Html
-pageTemplate title body =
-    H.html $ do
-        H.head $ do
-            H.title $ H.toHtml title
-        H.body $ do
-            body
-            H.hr
-            footer
+import BlogConfig
 
-footer = H.div ! A.class_ "footer" $ do
+pageTemplate :: String -> H.Html -> Reader BlogConfig H.Html
+pageTemplate pTitle body = do
+    config <- ask
+    return (do
+        H.html $ do
+            H.head $ do
+                H.title $ H.toHtml $ title config ++ " - " ++ pTitle
+                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/files/fonts/nunito.css"
+                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/files/styles/lit.css"
+            H.body ! A.class_ "c" $ do
+                H.a ! A.href "/" $ H.h1 $ H.toHtml $ title config
+                header
+                H.hr
+                H.div $ do
+                    body
+                )
+
+header = H.div ! A.class_ "row" $ do
     simpleLink "/" "Home"
-    simpleLink "/post" "A post!"
+    simpleLink "/about" "About this blog"
+    simpleLink "/post/postid" "A post!"
     simpleLink "/hblog" "About hblog"
 
-simpleLink path text = H.p $ H.a ! A.href path $ text
+simpleLink path text = H.div ! A.class_ "c col" $ H.a ! A.href path $ text
 
-homePage :: H.Html
-homePage = pageTemplate "Home" $ do
-    H.p "Welcome to the blog"
+homePage :: Reader BlogConfig H.Html
+homePage = (return . H.h3) "Welcome to the blog" >>= pageTemplate "Home"
 
-aboutHblogPage :: H.Html
-aboutHblogPage = pageTemplate "About hblog" $ do
-    H.p "Something about hblog"
+aboutHblogPage :: Reader BlogConfig H.Html
+aboutHblogPage = do
+    config <- ask
+    html <- return (do
+        H.h3 "About hblog"
+        H.p "hblog is a simple blogging site written entirely in Haskell and CSS"
+        H.p "On the Haskell side, it uses Happstack-lite and Blaze for templating"
+        H.p "It uses the tiny lit.css library, as well as the Nunito font")
+    pageTemplate "About hblog" html
+
+aboutPage :: Reader BlogConfig H.Html
+aboutPage = do
+    config <- ask
+    html <- return (do
+        H.h3 $ H.toHtml $ "About " ++ title config
+        H.p $ H.toHtml $ "Maintained by " ++ maintainer config
+        H.p $ H.toHtml $ description config)
+    pageTemplate "About this blog" html
