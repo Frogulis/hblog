@@ -29,10 +29,10 @@ pageTemplate pTitle body = do
 header = H.div ! A.class_ "row" $ do
     simpleLink "/" "Home"
     simpleLink "/about" "About this blog"
-    simpleLink "/post/postid" "A post!"
+    simpleLink "/post/2020-05-07-01" "A post!"
     simpleLink "/hblog" "About hblog"
 
-simpleLink path text = H.div ! A.class_ "c col" $ H.a ! A.href path $ text
+simpleLink path text = H.div ! A.class_ "col" $ H.a ! A.href path $ text
 
 homePage :: Reader BlogConfig H.Html
 homePage = (return . H.h3) "Welcome to the blog" >>= pageTemplate "Home"
@@ -43,7 +43,10 @@ aboutHblogPage = do
     html <- return (do
         H.h3 "About hblog"
         H.p "hblog is a simple blogging site written entirely in Haskell and CSS"
-        H.p "On the Haskell side, it uses Happstack-lite and Blaze for templating"
+        H.p $ do
+            "On the Haskell side, it uses " 
+            H.b "Happstack-lite and Blaze"
+            " for templating"
         H.p "It uses the tiny lit.css library, as well as the Nunito font")
     pageTemplate "About hblog" html
 
