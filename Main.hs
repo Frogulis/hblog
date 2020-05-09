@@ -20,6 +20,7 @@ blogConfig = BlogConfig
     "Sample blog"
     "Jamie Hoffmann"
     "A sample blog about something blah blah.\nWhatever and ever!"
+    (SqliteRepoDetails "hblog.db")
 
 
 main :: IO ()
@@ -32,13 +33,20 @@ main = do
 myApp :: BlogConfig -> ServerPart Response
 myApp config = do
     msum
-        [ dir "ping"        $ ping config
-        , dir "about"       $ about config
-        , dir "hblog"       $ hblog config
-        , dir "post"        $ post config
-        , dir "files"       $ serveDirectory DisableBrowsing [] "./wwwroot"
-        , Main.homePage config
+        [ method POST >> msum
+            [ dir "posts"       $ uploadPost config ]
+        , method GET >> msum
+            [ dir "ping"        $ ping config
+            , dir "about"       $ about config
+            , dir "hblog"       $ hblog config
+            , dir "posts"        $ post config
+            , dir "files"       $ serveDirectory DisableBrowsing [] "./wwwroot"
+            , Main.homePage config
+            ]
         ]
+
+uploadPost :: BlogConfig -> ServerPart Response
+uploadPost config = undefined
 
 homePage :: BlogConfig -> ServerPart Response
 homePage config = ok $ toResponse $ runReader Pages.Default.homePage config
@@ -47,18 +55,27 @@ post :: BlogConfig -> ServerPart Response
 post config = path $ \(postId :: String) -> do
     postRecordE <- retrievePageResponse config postId
     case postRecordE of
-        Left (sts, msg)         -> generateErrorPage sts msg
+        Left (sts, msg)        -> generateErrorPage sts msg
         Right postRecord       -> ok $ toResponse $ runReader (postPage postRecord) config
 
 generateErrorPage sts msg = ok $ toResponse $ show sts ++ ":" ++ msg
 
 retrievePageResponse :: BlogConfig -> String -> ServerPart (Either (Int, String) PostRecord)
-retrievePageResponse config postId =
+retrievePageResponse config postPath =
+    case postPath of
+        "latest"        -> retrieveLatestPostResponse config
+        _               -> retrieveSpecificPostResponse config postPath
+
+retrieveLatestPostResponse :: BlogConfig -> ServerPart (Either (Int, String) PostRecord)
+retrieveLatestPostResponse config = lift $ getLatestPostFromRepo (connDetails config)
+
+retrieveSpecificPostResponse :: BlogConfig -> String -> ServerPart (Either (Int, String) PostRecord)
+retrieveSpecificPostResponse config postId =
     let pId = validatePostId postId in
         case pId of
             Nothing             -> return $ Left (400, "Invalid post ID")
             Just validPostId    -> lift $ getPostFromRepo
-                (SqliteRepoDetails "hblog.db")
+                (connDetails config)
                 validPostId
 
 ping :: BlogConfig -> ServerPart Response

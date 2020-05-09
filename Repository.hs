@@ -40,6 +40,7 @@ extractNum arr idx = read (arr !! idx)::Int
 
 data PostRecord = PostRecord { postId           :: PostId
                              , title            :: String
+                             , author           :: String
                              , htmlContent      :: H.Html
                              , uploadDate       :: UTCTime
                              , publishDate      :: Maybe UTCTime
@@ -49,6 +50,7 @@ data PostRecord = PostRecord { postId           :: PostId
 data SqlPostRecord = SqlPostRecord { sId                :: Int
                                    , sPostId            :: PostId
                                    , sTitle             :: String
+                                   , sAuthor            :: String
                                    , sHtmlContent       :: String
                                    , sUploadDate        :: UTCTime
                                    , sPublishDate       :: Maybe UTCTime
@@ -59,20 +61,32 @@ instance FromRow SqlPostRecord where
         <$> field                       -- id
         <*> field                       -- PostId
         <*> field                       -- Title
+        <*> field                       -- Author
         <*> field                       -- HtmlContent
         <*> field                       -- UploadDate
         <*> field                       -- PublishDate
 
 toPostRecord :: SqlPostRecord -> PostRecord
-toPostRecord (SqlPostRecord _ sPostId sTitle sHtmlContent sUploadDate sPublishDate) =
-    PostRecord sPostId sTitle (H.preEscapedToHtml sHtmlContent) sUploadDate sPublishDate
+toPostRecord (SqlPostRecord _ sPostId sTitle sAuthor sHtmlContent sUploadDate sPublishDate) =
+    PostRecord sPostId sTitle sAuthor (H.preEscapedToHtml sHtmlContent) sUploadDate sPublishDate
 
-getPostFromRepo :: RepoConnDetails -> PostId -> IO (Either (Int,String) PostRecord)
-getPostFromRepo (FileRepoDetails filename) postId = undefined
+getPostFromRepo :: RepoConnDetails -> PostId -> IO (Either (Int, String) PostRecord)
 getPostFromRepo (SqliteRepoDetails dbName) postId = do
     L.log $ "Retrieving from " ++ dbName ++ " to get post " ++ postId
     conn <- open dbName
-    r <- query conn "SELECT * FROM Post WHERE PostId = (?)" (Only postId) :: IO [SqlPostRecord]
+    r <- query conn "SELECT Id, PostId, Title, Author, HtmlContent, UploadDate, PublishDate FROM Post WHERE PostId = (?) AND PublishDate IS NOT NULL" (Only postId) :: IO [SqlPostRecord]
+    L.log $ "Retrieved " ++ show (length r) ++ " posts"
+    close conn
+    case r of
+        []      -> return $ Left (404,"No values returned")
+        x: []   -> return $ Right $ toPostRecord x
+
+getLatestPostFromRepo :: RepoConnDetails -> IO (Either (Int, String) PostRecord)
+getLatestPostFromRepo (SqliteRepoDetails dbName) = do
+    L.log $ "Retrieving latest post from " ++ dbName
+    conn <- open dbName
+    r <- query_ conn "SELECT Id, PostId, Title, Author, HtmlContent, UploadDate, PublishDate FROM Post WHERE PublishDate IS NOT NULL ORDER BY PublishDate DESC LIMIT 1" :: IO [SqlPostRecord]
+    L.log $ "Retrieved " ++ show (length r) ++ " posts"
     close conn
     case r of
         []      -> return $ Left (404,"No values returned")

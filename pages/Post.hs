@@ -13,7 +13,8 @@ postPage :: PostRecord -> Reader BlogConfig H.Html
 postPage postRecord = postTemplate postRecord >>= pageTemplate (P.title postRecord)
 
 postTemplate :: PostRecord -> Reader BlogConfig H.Html
-postTemplate (PostRecord pPostId pTitle content _ publishDate) = return (do
+postTemplate (PostRecord pPostId pTitle author content _ publishDate) = return (do
     H.h3 $ H.toHtml pTitle
+    H.h4 $ H.toHtml author
     H.h4 $ H.toHtml $ maybe "Unpublished -- please report to maintainer" show publishDate
     H.p $ content)

@@ -29,7 +29,7 @@ pageTemplate pTitle body = do
 header = H.div ! A.class_ "row" $ do
     simpleLink "/" "Home"
     simpleLink "/about" "About this blog"
-    simpleLink "/post/2020-05-07-01" "A post!"
+    simpleLink "/posts/latest" "Latest post"
     simpleLink "/hblog" "About hblog"
 
 simpleLink path text = H.div ! A.class_ "col" $ H.a ! A.href path $ text
