@@ -1,4 +1,4 @@
-module Authentication where
+module Authentication (authenticate) where
 
 import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Reader
@@ -14,12 +14,6 @@ import Happstack.Lite
 import BlogConfig
 import Pages.Default (errorPage)
 import Repository (validAuth)
-
-maybeToEither :: e -> Maybe a -> Either e a
-maybeToEither left m =
-    case m of
-        Nothing     -> Left left
-        Just x      -> Right x
 
 authenticate :: BlogConfig -> ServerPart Response -> ServerPart Response
 authenticate config successResponse = do
