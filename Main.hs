@@ -9,9 +9,10 @@ import Happstack.Lite
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
+import Authentication (authenticate)
 import BlogConfig
 import Pages.Post
-import Pages.Default (aboutPage, aboutHblogPage, homePage)
+import Pages.Default (errorPage, aboutPage, aboutHblogPage, homePage)
 import Repository
 
 serverConfig = defaultServerConfig { port = 8000 }
@@ -34,7 +35,7 @@ myApp :: BlogConfig -> ServerPart Response
 myApp config = do
     msum
         [ method POST >> msum
-            [ dir "posts"       $ uploadPost config ]
+            [ dir "posts"       $ authenticate config $ uploadPost config ]
         , method GET >> msum
             [ dir "ping"        $ ping config
             , dir "about"       $ about config
@@ -46,7 +47,7 @@ myApp config = do
         ]
 
 uploadPost :: BlogConfig -> ServerPart Response
-uploadPost config = undefined
+uploadPost config = ok $ toResponse $ ("Authenticated!" :: String)
 
 homePage :: BlogConfig -> ServerPart Response
 homePage config = ok $ toResponse $ runReader Pages.Default.homePage config
@@ -55,10 +56,11 @@ post :: BlogConfig -> ServerPart Response
 post config = path $ \(postId :: String) -> do
     postRecordE <- retrievePageResponse config postId
     case postRecordE of
-        Left (sts, msg)        -> generateErrorPage sts msg
+        Left (sts, msg)        -> generateErrorPage config sts msg
         Right postRecord       -> ok $ toResponse $ runReader (postPage postRecord) config
 
-generateErrorPage sts msg = ok $ toResponse $ show sts ++ ":" ++ msg
+generateErrorPage :: BlogConfig -> Int -> String -> ServerPart Response
+generateErrorPage config sts msg = ok $ toResponse $ runReader (errorPage sts msg) config
 
 retrievePageResponse :: BlogConfig -> String -> ServerPart (Either (Int, String) PostRecord)
 retrievePageResponse config postPath =

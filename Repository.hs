@@ -3,6 +3,7 @@ module Repository where
 
 import Control.Applicative
 import Data.ByteString (ByteString)
+import Data.Hashable (hashWithSalt)
 import Data.Text.Encoding (decodeLatin1)
 import Data.List.Split (splitOn)
 import Data.String (IsString)
@@ -91,3 +92,14 @@ getLatestPostFromRepo (SqliteRepoDetails dbName) = do
     case r of
         []      -> return $ Left (404,"No values returned")
         x: []   -> return $ Right $ toPostRecord x
+
+validAuth :: RepoConnDetails -> String -> String -> IO Bool
+validAuth (SqliteRepoDetails dbName) username password = do
+    L.log $ "Checking auth from " ++ dbName ++ " for " ++ username
+    conn <- open dbName
+    r <- query conn "SELECT PasswordHash, HashSalt FROM User WHERE Username = (?)" (Only username) :: IO [(String, Int)]
+    close conn
+    case r of
+        []                  -> return False
+        (pHash, salt): []   -> let tryHash = show $ hashWithSalt salt password in
+            return $ pHash == tryHash

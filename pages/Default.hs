@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Pages.Default (pageTemplate, homePage, aboutPage, aboutHblogPage) where
+module Pages.Default (pageTemplate, errorPage, homePage, aboutPage, aboutHblogPage) where
 
 import Control.Monad.Trans.Reader
 
@@ -33,6 +33,9 @@ header = H.div ! A.class_ "row" $ do
     simpleLink "/hblog" "About hblog"
 
 simpleLink path text = H.div ! A.class_ "col" $ H.a ! A.href path $ text
+
+errorPage :: Int -> String -> Reader BlogConfig H.Html
+errorPage sts msg = (return . H.h3) (H.toHtml $ show sts ++ ":" ++ msg) >>= pageTemplate "Error"
 
 homePage :: Reader BlogConfig H.Html
 homePage = (return . H.h3) "Welcome to the blog" >>= pageTemplate "Home"

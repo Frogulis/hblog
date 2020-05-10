@@ -1,8 +1,8 @@
 DROP TABLE Post;
 DROP Table User;
 
-CREATE TABLE User (id INTEGER PRIMARY KEY, Username TEXT, PasswordHash TEXT, UserRole TEXT);
-insert into User values (1, 'jamie', '8302914017327024210', 'Admin');
+CREATE TABLE User (id INTEGER PRIMARY KEY, Username TEXT, PasswordHash TEXT, HashSalt NUMBER, UserRole TEXT);
+insert into User values (1, 'jamie', '8302914017327024210', 7, 'Admin');
 
 CREATE TABLE Post (id INTEGER PRIMARY KEY, PostId TEXT, Title TEXT, Author TEXT, HtmlContent BLOB, UploadDate TEXT, PublishDate TEXT);
 INSERT INTO Post VALUES (1, '2020-05-07-01', 'A sample post', 'Jamie Hoffmann', '<article><p>What is going on here?!</p><p>It is a <b>post</b>!</p></article>','2020-05-07T10:00:00Z','2020-05-07T10:00:00Z');
