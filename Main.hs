@@ -40,7 +40,8 @@ myApp config = do
             [ dir "ping"        $ ping config
             , dir "about"       $ about config
             , dir "hblog"       $ hblog config
-            , dir "posts"        $ post config
+            , dir "posts"       $ post config
+            , dir "unpublished" $ authenticate config $ unpublished config
             , dir "files"       $ serveDirectory DisableBrowsing [] "./wwwroot"
             , Main.homePage config
             ]
@@ -77,6 +78,22 @@ retrieveSpecificPostResponse config postId =
         case pId of
             Nothing             -> return $ Left (400, "Invalid post ID")
             Just validPostId    -> lift $ getPostFromRepo
+                (connDetails config)
+                validPostId
+
+unpublished :: BlogConfig -> ServerPart Response
+unpublished config = path $ \(postId :: String) -> do
+    postRecordE <- unpublishedPageResponse config postId
+    case postRecordE of
+        Left (sts, msg)     -> generateErrorPage config sts msg
+        Right postRecord    -> ok $ toResponse $ runReader (postPage postRecord) config
+
+unpublishedPageResponse :: BlogConfig -> String -> ServerPart (Either (Int, String) PostRecord)
+unpublishedPageResponse config postId =
+    let pId = validatePostId postId in
+        case pId of
+            Nothing             -> return $ Left (400, "Invalid post ID")
+            Just validPostId    -> lift $ getAnyPostFromRepo
                 (connDetails config)
                 validPostId
 

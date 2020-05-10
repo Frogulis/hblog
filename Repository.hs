@@ -93,6 +93,17 @@ getLatestPostFromRepo (SqliteRepoDetails dbName) = do
         []      -> return $ Left (404,"No values returned")
         x: []   -> return $ Right $ toPostRecord x
 
+getAnyPostFromRepo :: RepoConnDetails -> PostId -> IO (Either (Int, String) PostRecord)
+getAnyPostFromRepo (SqliteRepoDetails dbName) postId = do
+    L.log $ "Retrieving from " ++ dbName ++ " to get post " ++ postId
+    conn <- open dbName
+    r <- query conn "SELECT Id, PostId, Title, Author, HtmlContent, UploadDate, PublishDate FROM Post WHERE PostId = (?)" (Only postId) :: IO [SqlPostRecord]
+    L.log $ "Retrieved " ++ show (length r) ++ " posts"
+    close conn
+    case r of
+        []      -> return $ Left (404,"No values returned")
+        x: []   -> return $ Right $ toPostRecord x
+
 validAuth :: RepoConnDetails -> String -> String -> IO Bool
 validAuth (SqliteRepoDetails dbName) username password = do
     L.log $ "Checking auth from " ++ dbName ++ " for " ++ username
