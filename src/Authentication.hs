@@ -18,26 +18,35 @@ import Repository (validAuth)
 authenticate :: BlogConfig -> ServerPart Response -> ServerPart Response
 authenticate config successResponse = do
     authStringM <- getHeaderM "Authorization"
-    case authStringM of
-        Nothing         -> authErrorResponse config "No auth header provided"
-        Just bStr       -> withStrippedBasic config successResponse bStr
+    let auths = maybeToEither "No auth header provided" authStringM >>= stripBasicE >>= decodeAuthE >>= splitAuthE in
+        case auths of
+            Left str                    -> authErrorResponse config str
+            Right (username, password)  -> guardAuth config successResponse username password
 
-withStrippedBasic :: BlogConfig -> ServerPart Response -> ByteString -> ServerPart Response
-withStrippedBasic config successResponse bStr =
+maybeToEither :: e -> Maybe a -> Either e a
+maybeToEither errorVal Nothing  = Left errorVal
+maybeToEither _ (Just x)        = Right x
+
+stripBasicE :: ByteString -> Either String ByteString
+stripBasicE bStr =
     let strippedM = stripPrefix (pack "Basic ") bStr in
         case strippedM of
-            Nothing         -> authErrorResponse config "Require Basic auth"
-            Just stripped   -> checkAuthFor config successResponse stripped
+            Nothing         -> Left "Require Basic auth"
+            Just stripped   -> Right stripped
 
-checkAuthFor :: BlogConfig -> ServerPart Response -> ByteString -> ServerPart Response
-checkAuthFor config successResponse bStr =
+decodeAuthE :: ByteString -> Either String ByteString
+decodeAuthE bStr =
     let decodedE = decode bStr in
         case decodedE of
-            Left err        -> authErrorResponse config "Invalid auth header"
-            Right decStr    -> let auths = (splitOn ":" . unpack . decodeLatin1) decStr in
-                case auths of
-                    username:password:_ -> guardAuth config successResponse username password
-                    _                   -> authErrorResponse config "Invalid auth header"
+            Left err        -> Left "Invalid auth header encoding"
+            Right decStr    -> Right decStr
+
+splitAuthE :: ByteString -> Either String (String, String)
+splitAuthE str =
+    let auths = (splitOn ":" . unpack . decodeLatin1) str in
+        case auths of
+            username:password:_ -> Right (username, password)
+            _                   -> Left "Invalid auth header"
 
 guardAuth :: BlogConfig -> ServerPart Response -> String -> String -> ServerPart Response
 guardAuth config successResponse username password = do
