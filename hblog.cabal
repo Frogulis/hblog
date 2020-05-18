@@ -56,7 +56,8 @@ executable hblog
                        Authentication,
                        BlogConfig,
                        Repository,
-                       Logger
+                       Logger,
+                       Header
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:

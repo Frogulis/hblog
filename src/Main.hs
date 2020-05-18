@@ -11,6 +11,7 @@ import qualified Text.Blaze.Html5.Attributes as A
 
 import Authentication (authenticate)
 import BlogConfig
+import Header
 import Pages.Post
 import Pages.Default (errorPage, aboutPage, aboutHblogPage, homePage)
 import Repository
@@ -48,7 +49,11 @@ myApp config = do
         ]
 
 uploadPost :: BlogConfig -> ServerPart Response
-uploadPost config = ok $ toResponse $ ("Authenticated!" :: String)
+uploadPost config = do
+    output <- getMultipleHeaders ["PostId", "PostTitle", "PostAuthor", "Publish"]
+    case output of
+        Left header     -> setResponseCode 400 >> (generateErrorPage config 400 $ "Can't find header " ++ header)
+        Right values    -> ok $ toResponse $ show values
 
 homePage :: BlogConfig -> ServerPart Response
 homePage config = ok $ toResponse $ runReader Pages.Default.homePage config
