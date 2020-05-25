@@ -57,7 +57,8 @@ executable hblog
                        BlogConfig,
                        Repository,
                        Logger,
-                       Header
+                       Header,
+                       UploadRepository
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
@@ -75,7 +76,7 @@ executable hblog
                        time,
                        bytestring,
                        base64-bytestring,
-                       hashable
+                       hashable,
 
   -- Directories containing source files.
   hs-source-dirs:      src

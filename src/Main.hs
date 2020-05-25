@@ -3,7 +3,12 @@ module Main where
 
 import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Reader
-import Data.Text (Text)
+import Data.ByteString (ByteString)
+import Data.Either (fromRight)
+import Data.Text (Text, unpack)
+import qualified Data.Text.Internal.Lazy as TL (Text)
+import Data.Text.Encoding (decodeLatin1)
+import Data.Time (UTCTime, getCurrentTime)
 
 import Happstack.Lite
 import qualified Text.Blaze.Html5 as H
@@ -15,6 +20,7 @@ import Header
 import Pages.Post
 import Pages.Default (errorPage, aboutPage, aboutHblogPage, homePage)
 import Repository
+import UploadRepository
 
 serverConfig = defaultServerConfig { port = 8000 }
 
@@ -50,10 +56,27 @@ myApp config = do
 
 uploadPost :: BlogConfig -> ServerPart Response
 uploadPost config = do
-    output <- getMultipleHeaders ["PostId", "PostTitle", "PostAuthor", "Publish"]
-    case output of
+    metadata <- getMultipleHeaders ["PostId", "PostTitle", "PostAuthor", "Publish"]
+    htmlContent <- (lookText "htmlcontent")
+    time <- lift getCurrentTime
+    case metadata of
         Left header     -> setResponseCode 400 >> (generateErrorPage config 400 $ "Can't find header " ++ header)
-        Right values    -> ok $ toResponse $ show values
+        Right values    -> do
+            result <- lift $ uploadPostToRepo (connDetails config) (buildPostRecord values time htmlContent)
+            case result of
+                True    -> ok $ toResponse $ ("posted"::String)
+                False   -> internalServerError $ toResponse $ ("error while posting"::String)
+
+buildPostRecord :: [(String, ByteString)] -> UTCTime -> TL.Text -> PostRecord
+buildPostRecord metadata nowDate htmlContent = PostRecord
+    (extract "PostId" metadata)
+    (extract "PostTitle" metadata)
+    (extract "PostAuthor" metadata)
+    (H.preEscapedToHtml htmlContent)
+    (nowDate)
+    (if (extract "Publish" metadata == "1") then Just nowDate else Nothing)
+    where
+        extract s = (unpack . decodeLatin1 . snd . head . filter (\x -> fst x == s))
 
 homePage :: BlogConfig -> ServerPart Response
 homePage config = ok $ toResponse $ runReader Pages.Default.homePage config
