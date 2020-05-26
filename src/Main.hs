@@ -42,7 +42,8 @@ myApp :: BlogConfig -> ServerPart Response
 myApp config = do
     msum
         [ method POST >> msum
-            [ dir "posts"       $ authenticate config $ uploadPost config ]
+            [ dir "posts"       $ authenticate config $ uploadPost config
+            , dir "publish"     $ authenticate config $ publishPost config ]
         , method GET >> msum
             [ dir "ping"        $ ping config
             , dir "about"       $ about config
@@ -53,6 +54,15 @@ myApp config = do
             , Main.homePage config
             ]
         ]
+
+publishPost :: BlogConfig -> ServerPart Response
+publishPost config = path $ \(postId :: String) -> do
+    case validatePostId postId of
+        Just pId    -> do
+            time <- lift getCurrentTime
+            lift $ publishPostInRepo (connDetails config) pId time
+            ok $ toResponse $ ("published"::String)
+        Nothing     -> setResponseCode 400 >> return (toResponse $ ("not published"::String))
 
 uploadPost :: BlogConfig -> ServerPart Response
 uploadPost config = do

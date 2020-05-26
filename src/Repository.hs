@@ -104,6 +104,14 @@ getAnyPostFromRepo (SqliteRepoDetails dbName) postId = do
         []      -> return $ Left (404,"No values returned")
         x: []   -> return $ Right $ toPostRecord x
 
+publishPostInRepo :: RepoConnDetails -> PostId -> UTCTime -> IO ()
+publishPostInRepo (SqliteRepoDetails dbName) postId publishDate = do
+    L.log $ "Publish in " ++ dbName ++ " for post " ++ postId
+    conn <- open dbName
+    r <- execute conn "UPDATE Post SET PublishDate = (?) WHERE PostId = (?)" (publishDate, postId)
+    close conn
+    L.log $ "Published"
+
 validAuth :: RepoConnDetails -> String -> String -> IO Bool
 validAuth (SqliteRepoDetails dbName) username password = do
     L.log $ "Checking auth from " ++ dbName ++ " for " ++ username
