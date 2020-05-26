@@ -18,6 +18,7 @@ pageTemplate pTitle body = do
                 H.title $ H.toHtml $ title config ++ " - " ++ pTitle
                 H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/files/fonts/nunito.css"
                 H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/files/styles/lit.css"
+                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/files/styles/custom.css"
             H.body ! A.class_ "c" $ do
                 H.a ! A.href "/" $ H.h1 $ H.toHtml $ title config
                 header

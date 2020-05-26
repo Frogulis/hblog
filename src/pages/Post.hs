@@ -1,8 +1,12 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Pages.Post (postPage) where
 
 import Control.Monad.Trans.Reader
+import Data.Time.Format (formatTime, defaultTimeLocale)
 
+import Text.Blaze.Html5 ((!))
 import qualified Text.Blaze.Html5 as H
+import qualified Text.Blaze.Html5.Attributes as A
 
 import BlogConfig
 import Repository (PostRecord(..))
@@ -14,7 +18,10 @@ postPage postRecord = postTemplate postRecord >>= pageTemplate (P.title postReco
 
 postTemplate :: PostRecord -> Reader BlogConfig H.Html
 postTemplate (PostRecord pPostId pTitle author content _ publishDate) = return (do
-    H.h3 $ H.toHtml pTitle
-    H.h4 $ H.toHtml author
-    H.h4 $ H.toHtml $ maybe "Unpublished -- please report to maintainer" show publishDate
+    H.div ! A.class_ "title-box" $ do
+        H.h3 $ H.toHtml pTitle
+        H.h5 $ H.toHtml author
+        H.h5 $ H.toHtml $ maybe "Unpublished -- please report to maintainer" getDatestring publishDate
     H.p $ content)
+    where
+        getDatestring = formatTime defaultTimeLocale "%F"
