@@ -51,7 +51,8 @@ myApp config = do
             , dir "posts"       $ post config
             , dir "unpublished" $ authenticate config $ unpublished config
             , dir "files"       $ serveDirectory DisableBrowsing [] "./wwwroot"
-            , Main.homePage config
+            , nullDir >> Main.homePage config
+            , setResponseCode 404 >> (generateErrorPage config 404 $ "Page not found! Try another.")
             ]
         ]
 
@@ -89,7 +90,11 @@ buildPostRecord metadata nowDate htmlContent = PostRecord
         extract s = (unpack . decodeLatin1 . snd . head . filter (\x -> fst x == s))
 
 homePage :: BlogConfig -> ServerPart Response
-homePage config = ok $ toResponse $ runReader Pages.Default.homePage config
+homePage config = do
+    postRecordE <- retrievePageResponse config "latest"
+    case postRecordE of
+        Left (sts, msg)        -> ok $ toResponse $ runReader Pages.Default.homePage config
+        Right postRecord       -> ok $ toResponse $ runReader (postPage postRecord) config
 
 post :: BlogConfig -> ServerPart Response
 post config = path $ \(postId :: String) -> do

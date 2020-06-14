@@ -13,10 +13,8 @@ import Database.SQLite.Simple
 import Database.SQLite.Simple.FromRow
 import qualified Text.Blaze.Html5 as H
 
+import BlogConfig (RepoConnDetails(..))
 import qualified Logger as L
-
-data RepoConnDetails = FileRepoDetails { filePath :: String }
-                     | SqliteRepoDetails { dbName :: String }
 
 type PostId = String
 

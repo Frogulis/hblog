@@ -77,6 +77,7 @@ executable hblog
                        bytestring,
                        base64-bytestring,
                        hashable,
+                       aeson
 
   -- Directories containing source files.
   hs-source-dirs:      src

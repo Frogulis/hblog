@@ -18,7 +18,7 @@ postPage postRecord = postTemplate postRecord >>= pageTemplate (P.title postReco
 
 postTemplate :: PostRecord -> Reader BlogConfig H.Html
 postTemplate (PostRecord pPostId pTitle author content _ publishDate) = return (do
-    H.div ! A.class_ "title-box" $ do
+    H.div $ do
         H.h3 $ H.toHtml pTitle
         H.h5 $ H.toHtml author
         H.h5 $ H.toHtml $ maybe "Unpublished -- please report to maintainer" getDatestring publishDate

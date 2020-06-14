@@ -39,7 +39,11 @@ errorPage :: Int -> String -> Reader BlogConfig H.Html
 errorPage sts msg = (return . H.h3) (H.toHtml $ show sts ++ ":" ++ msg) >>= pageTemplate "Error"
 
 homePage :: Reader BlogConfig H.Html
-homePage = (return . H.h3) "Welcome to the blog" >>= pageTemplate "Home"
+homePage = do
+    html <- return (do
+        H.h3 "Welcome to the blog"
+        H.p "Watch this space for posts!")
+    pageTemplate "Home" html
 
 aboutHblogPage :: Reader BlogConfig H.Html
 aboutHblogPage = do

@@ -5,8 +5,9 @@ import Database.SQLite.Simple
 import qualified Text.Blaze.Html5 as H
 import Text.Blaze.Html.Renderer.String (renderHtml)
 
+import BlogConfig (RepoConnDetails(..))
 import qualified Logger as L
-import Repository (PostRecord(..), PostId, RepoConnDetails(..))
+import Repository (PostRecord(..), PostId)
 
 instance ToRow PostRecord where
     toRow record =
