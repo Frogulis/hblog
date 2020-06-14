@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 module Main where
 
+import Control.Monad.Catch (SomeException, handle)
 import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Reader
 import Data.ByteString (ByteString)
@@ -17,10 +18,12 @@ import qualified Text.Blaze.Html5.Attributes as A
 import Authentication (authenticate)
 import BlogConfig
 import Header
+import qualified Logger as L
 import Pages.Post
 import Pages.Default (errorPage, aboutPage, aboutHblogPage, homePage)
 import Repository
 import UploadRepository
+
 
 serverConfig = defaultServerConfig { port = 8000 }
 
@@ -30,10 +33,18 @@ main = do
     putStrLn $ "Running at http://localhost:" ++ (show $ port serverConfig)
     serve (Just serverConfig) (myApp config)
 
+handleServerPartError :: BlogConfig -> ServerPart Response -> ServerPart Response
+handleServerPartError config s = handle errorPage s
+    where
+        errorPage :: SomeException -> ServerPart Response
+        errorPage err = do
+            lift $ L.log $ show err
+            setResponseCode 500 >> (generateErrorPage config 500 $ "Unknown error occurred.")
+
 -- load in config before this point so that it can be hot-reloaded while
 -- separate from rest of application
 myApp :: BlogConfig -> ServerPart Response
-myApp config = do
+myApp config = handleServerPartError config $ do
     msum
         [ method POST >> msum
             [ dir "posts"       $ authenticate config $ uploadPost config
