@@ -24,3 +24,4 @@ cabal.project.local~
 library.json
 .devcontainer
 *.db
+blogConfig.json

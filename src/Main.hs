@@ -24,17 +24,11 @@ import UploadRepository
 
 serverConfig = defaultServerConfig { port = 8000 }
 
-blogConfig = BlogConfig
-    "Sample blog"
-    "Jamie Hoffmann"
-    "A sample blog about something blah blah.\nWhatever and ever!"
-    (SqliteRepoDetails "hblog.db")
-
-
 main :: IO ()
 main = do
+    config <- loadConfig "blogConfig.json"
     putStrLn $ "Running at http://localhost:" ++ (show $ port serverConfig)
-    serve (Just serverConfig) (myApp blogConfig)
+    serve (Just serverConfig) (myApp config)
 
 -- load in config before this point so that it can be hot-reloaded while
 -- separate from rest of application

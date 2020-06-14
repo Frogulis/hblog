@@ -1,0 +1,9 @@
+{
+    "blogTitle": "A sample blog",
+    "maintainer": "Some One",
+    "description": "A blog demonstrating the functionality of the software",
+    "connDetails": {
+        "repoType": "SQLITE",
+        "details": "hblog.db"
+    }
+}
