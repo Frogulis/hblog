@@ -20,7 +20,7 @@ import BlogConfig
 import Header
 import qualified Logger as L
 import Pages.Post
-import Pages.Default (errorPage, aboutPage, aboutHblogPage, homePage)
+import Pages.Default (errorPage, aboutPage, aboutHblogPage, homePage, pageTemplate, archivePage)
 import Repository
 import UploadRepository
 
@@ -54,6 +54,7 @@ myApp config = handleServerPartError config $ do
             , dir "about"       $ about config
             , dir "hblog"       $ hblog config
             , dir "posts"       $ post config
+            , dir "archive"     $ archive config
             , dir "unpublished" $ authenticate config $ unpublished config
             , dir "files"       $ serveDirectory DisableBrowsing [] "./wwwroot"
             , nullDir >> Main.homePage config
@@ -107,6 +108,13 @@ post config = path $ \(postId :: String) -> do
     case postRecordE of
         Left (sts, msg)        -> generateErrorPage config sts msg
         Right postRecord       -> ok $ toResponse $ runReader (postPage postRecord) config
+
+archive :: BlogConfig -> ServerPart Response
+archive config = path $ \(pageNo :: Int) -> do
+    dbResult <- lift $ getArchivePageFromRepo (connDetails config) pageSize pageNo
+    ok $ toResponse $ runReader (archivePage pageNo dbResult) config
+    where
+        pageSize = 20
 
 generateErrorPage :: BlogConfig -> Int -> String -> ServerPart Response
 generateErrorPage config sts msg = ok $ toResponse $ runReader (errorPage sts msg) config

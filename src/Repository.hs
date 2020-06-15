@@ -102,6 +102,26 @@ getAnyPostFromRepo (SqliteRepoDetails dbName) postId = do
         []      -> return $ Left (404,"No values returned")
         x: []   -> return $ Right $ toPostRecord x
 
+-- pageNo is 0-indexed
+getArchivePageFromRepo :: RepoConnDetails -> Int -> Int -> IO (Int, [(PostId, String)])
+getArchivePageFromRepo (SqliteRepoDetails dbName) pageSize pageNo = do
+    L.log $ "Retrieving page number " ++ show pageNo ++ " of post archive"
+    conn <- open dbName
+    records <- query conn
+        "SELECT PostId, Title FROM Post WHERE PublishDate IS NOT NULL ORDER BY PublishDate LIMIT (?) OFFSET (?)"
+        (pageSize, pageNo * pageSize)
+        :: IO [(PostId, String)]
+    counts <- query_ conn
+        "SELECT count(PostId) FROM Post WHERE PublishDate IS NOT NULL"
+        :: IO [Only Int]
+    L.log $ "Retrieved " ++ (show . length) records ++ " posts"
+    close conn
+    return (getTotalPages pageSize ((fromOnly . head) counts), records)
+
+getTotalPages :: Int -> Int -> Int
+getTotalPages pageSize totalPosts =
+    totalPosts `div` pageSize + (if totalPosts `rem` pageSize > 0 then 1 else 0)
+
 publishPostInRepo :: RepoConnDetails -> PostId -> UTCTime -> IO ()
 publishPostInRepo (SqliteRepoDetails dbName) postId publishDate = do
     L.log $ "Publish in " ++ dbName ++ " for post " ++ postId

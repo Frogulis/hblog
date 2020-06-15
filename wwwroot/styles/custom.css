@@ -2,3 +2,7 @@
     background-color: #eee;
     padding: 1em;
 }
+
+.inactive {
+    color: #777777;
+}

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Pages.Default (pageTemplate, errorPage, homePage, aboutPage, aboutHblogPage) where
+module Pages.Default (pageTemplate, errorPage, homePage, aboutPage, aboutHblogPage, archivePage) where
 
 import Control.Monad.Trans.Reader
 
@@ -8,6 +8,7 @@ import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
 import BlogConfig
+import Repository (PostId)
 
 pageTemplate :: String -> H.Html -> Reader BlogConfig H.Html
 pageTemplate pTitle body = do
@@ -28,10 +29,9 @@ pageTemplate pTitle body = do
                 )
 
 header = H.div ! A.class_ "row" $ do
-    simpleLink "/" "Home"
-    simpleLink "/about" "About this blog"
     simpleLink "/posts/latest" "Latest post"
-    simpleLink "/hblog" "About hblog"
+    simpleLink "/archive/0" "Archive"
+    simpleLink "/about" "About this blog"
 
 simpleLink path text = H.div ! A.class_ "col" $ H.a ! A.href path $ text
 
@@ -66,3 +66,36 @@ aboutPage = do
         H.p $ H.toHtml $ "Maintained by " ++ maintainer config
         H.p $ H.toHtml $ description config)
     pageTemplate "About this blog" html
+
+archivePage :: Int -> (Int, [(PostId, String)]) -> Reader BlogConfig H.Html
+archivePage pageNo (totalPages, records) = do
+    config <- ask
+    html <- return (do
+        H.h3 "Archive"
+        pageButtons totalPages pageNo
+        archiveList records
+        pageButtons totalPages pageNo)
+    pageTemplate "Archive" html
+
+archiveList :: [(PostId, String)] -> H.Html
+archiveList records = case records of
+    []      -> "No posts available"
+    _       -> do
+        H.table $ do
+            H.toHtml $ (map rowify records)
+    where
+        rowify (pId, pTitle) = do
+            H.tr $ do
+                H.td $ do
+                    H.a ! A.href (H.toValue $ "/posts/" ++ pId) $ H.toHtml pTitle
+
+pageButtons totalPages pageNo = case totalPages of
+    1   -> H.div ""
+    _   -> H.p $ do
+        pageButton (pageNo - 1) (not $ pageNo == 0) "Back"
+        H.span $ " | "
+        pageButton (pageNo + 1) (pageNo + 1 < totalPages) "Forward"
+
+pageButton num active text = case active of
+    True    -> H.a ! A.href (H.toValue $ "/archive/" ++ show num) $ text
+    False   -> H.span ! A.class_ "inactive" $ text
