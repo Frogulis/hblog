@@ -108,7 +108,7 @@ getArchivePageFromRepo (SqliteRepoDetails dbName) pageSize pageNo = do
     L.log $ "Retrieving page number " ++ show pageNo ++ " of post archive"
     conn <- open dbName
     records <- query conn
-        "SELECT PostId, Title FROM Post WHERE PublishDate IS NOT NULL ORDER BY PublishDate LIMIT (?) OFFSET (?)"
+        "SELECT PostId, Title FROM Post WHERE PublishDate IS NOT NULL ORDER BY PublishDate DESC LIMIT (?) OFFSET (?)"
         (pageSize, pageNo * pageSize)
         :: IO [(PostId, String)]
     counts <- query_ conn
