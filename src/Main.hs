@@ -5,7 +5,6 @@ import Control.Monad.Catch (SomeException, handle)
 import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Reader
 import Data.ByteString (ByteString)
-import Data.Either (fromRight)
 import Data.Text (Text, unpack)
 import qualified Data.Text.Internal.Lazy as TL (Text)
 import Data.Text.Encoding (decodeLatin1)
