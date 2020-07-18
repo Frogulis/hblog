@@ -17,11 +17,11 @@ pageTemplate pTitle body = do
         H.html $ do
             H.head $ do
                 H.title $ H.toHtml $ title config ++ " - " ++ pTitle
-                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/files/fonts/nunito.css"
-                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/files/styles/lit.css"
-                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/files/styles/custom.css"
+                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "../files/fonts/nunito.css"
+                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "../files/styles/lit.css"
+                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "../files/styles/custom.css"
             H.body ! A.class_ "c" $ do
-                H.a ! A.href "/" $ H.h1 $ H.toHtml $ title config
+                H.a ! A.href "../home" $ H.h1 $ H.toHtml $ title config
                 header
                 H.hr
                 H.div $ do
@@ -29,9 +29,9 @@ pageTemplate pTitle body = do
                 )
 
 header = H.div ! A.class_ "row" $ do
-    simpleLink "/posts/latest" "Latest post"
-    simpleLink "/archive/0" "Archive"
-    simpleLink "/about" "About this blog"
+    simpleLink "../posts/latest" "Latest post"
+    simpleLink "../archive/0" "Archive"
+    simpleLink "../about" "About this blog"
 
 simpleLink path text = H.div ! A.class_ "col" $ H.a ! A.href path $ text
 
@@ -87,7 +87,7 @@ archiveList records = case records of
         rowify (pId, pTitle) = do
             H.tr $ do
                 H.td $ do
-                    H.a ! A.href (H.toValue $ "/posts/" ++ pId) $ H.toHtml pTitle
+                    H.a ! A.href (H.toValue $ "../posts/" ++ pId) $ H.toHtml pTitle
 
 pageButtons totalPages pageNo = case totalPages of
     1   -> H.div ""
@@ -97,5 +97,5 @@ pageButtons totalPages pageNo = case totalPages of
         pageButton (pageNo + 1) (pageNo + 1 < totalPages) "Forward"
 
 pageButton num active text = case active of
-    True    -> H.a ! A.href (H.toValue $ "/archive/" ++ show num) $ text
+    True    -> H.a ! A.href (H.toValue $ "../archive/" ++ show num) $ text
     False   -> H.span ! A.class_ "inactive" $ text

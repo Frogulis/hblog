@@ -11,6 +11,7 @@ import Data.Text.Encoding (decodeLatin1)
 import Data.Time (UTCTime, getCurrentTime)
 
 import Happstack.Lite
+import qualified Happstack.Server.SURI as U (parse)
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
@@ -56,7 +57,10 @@ myApp config = handleServerPartError config $ do
             , dir "archive"     $ archive config
             , dir "unpublished" $ authenticate config $ unpublished config
             , dir "files"       $ serveDirectory DisableBrowsing [] "./wwwroot"
-            , nullDir >> Main.homePage config
+            , dir "home"        $ Main.homePage config
+            , nullDir >> seeOther
+                (maybe (error "Failed to setup root redirect") id (U.parse "home"))
+                (toResponse $ ("This root page redirects to /home"::String))
             , setResponseCode 404 >> (generateErrorPage config 404 $ "Page not found! Try another.")
             ]
         ]
