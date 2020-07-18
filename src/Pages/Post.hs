@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Pages.Post (postPage) where
+module Pages.Post (postPage, postTemplate) where
 
 import Control.Monad.Trans.Reader
 import Data.Time.Format (formatTime, defaultTimeLocale)
@@ -11,7 +11,7 @@ import qualified Text.Blaze.Html5.Attributes as A
 import BlogConfig
 import Repository (PostRecord(..))
 import qualified Repository as P (title)
-import Pages.Default (pageTemplate)
+import Pages.Template
 
 postPage :: PostRecord -> Reader BlogConfig H.Html
 postPage postRecord = postTemplate postRecord >>= pageTemplate 1 (P.title postRecord)

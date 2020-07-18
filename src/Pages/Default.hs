@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Pages.Default (pageTemplate, errorPage, homePage, aboutPage, aboutHblogPage, archivePage) where
+module Pages.Default (pageTemplate, errorPage, homePage, homePageWithPost, aboutPage, aboutHblogPage, archivePage) where
 
 import Control.Monad.Trans.Reader
 
@@ -8,35 +8,10 @@ import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 
 import BlogConfig
-import Repository (PostId)
-
-pageTemplate :: Int -> String -> H.Html -> Reader BlogConfig H.Html
-pageTemplate depth pTitle body = do
-    config <- ask
-    return (do
-        H.html $ do
-            H.head $ do
-                H.title $ H.toHtml $ title config ++ " - " ++ pTitle
-                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href (deepen depth "files/fonts/nunito.css")
-                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href (deepen depth "files/styles/lit.css")
-                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href (deepen depth "files/styles/custom.css")
-            H.body ! A.class_ "c" $ do
-                H.a ! A.href (deepen depth "home") $ H.h1 $ H.toHtml $ title config
-                header depth
-                H.hr
-                H.div $ do
-                    body
-                )
-
-deepen depth link =
-    H.toValue $ concat (replicate depth "../") ++ link
-
-header depth = H.div ! A.class_ "row" $ do
-    simpleLink (deepen depth "posts/latest") "Latest post"
-    simpleLink (deepen depth "archive/0") "Archive"
-    simpleLink (deepen depth "about") "About this blog"
-
-simpleLink path text = H.div ! A.class_ "col" $ H.a ! A.href path $ text
+import qualified BlogConfig as B (title)
+import Pages.Post (postTemplate)
+import Pages.Template
+import Repository (PostId, PostRecord(..))
 
 errorPage :: Int -> String -> Reader BlogConfig H.Html
 errorPage sts msg = (return . H.h3) (H.toHtml $ show sts ++ ":" ++ msg) >>= pageTemplate 0 "Error"
@@ -46,6 +21,14 @@ homePage = do
     html <- return (do
         H.h3 "Welcome to the blog"
         H.p "Watch this space for posts!")
+    pageTemplate 0 "Home" html
+
+homePageWithPost :: PostRecord -> Reader BlogConfig H.Html
+homePageWithPost postRecord = do
+    post <- postTemplate postRecord
+    html <- return (do
+        H.h3 "Welcome to the blog"
+        post)
     pageTemplate 0 "Home" html
 
 aboutHblogPage :: Reader BlogConfig H.Html
@@ -65,7 +48,7 @@ aboutPage :: Reader BlogConfig H.Html
 aboutPage = do
     config <- ask
     html <- return (do
-        H.h3 $ H.toHtml $ "About " ++ title config
+        H.h3 $ H.toHtml $ "About " ++ B.title config
         H.p $ H.toHtml $ "Maintained by " ++ maintainer config
         H.p $ H.toHtml $ description config)
     pageTemplate 0 "About this blog" html

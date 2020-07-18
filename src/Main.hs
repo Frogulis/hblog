@@ -20,7 +20,7 @@ import BlogConfig
 import Header
 import qualified Logger as L
 import Pages.Post
-import Pages.Default (errorPage, aboutPage, aboutHblogPage, homePage, pageTemplate, archivePage)
+import Pages.Default (errorPage, aboutPage, aboutHblogPage, homePage, homePageWithPost, pageTemplate, archivePage)
 import Repository
 import UploadRepository
 
@@ -103,7 +103,7 @@ homePage config = do
     postRecordE <- retrievePageResponse config "latest"
     case postRecordE of
         Left (sts, msg)        -> ok $ toResponse $ runReader Pages.Default.homePage config
-        Right postRecord       -> ok $ toResponse $ runReader (postPage postRecord) config
+        Right postRecord       -> ok $ toResponse $ runReader (homePageWithPost postRecord) config
 
 post :: BlogConfig -> ServerPart Response
 post config = path $ \(postId :: String) -> do
