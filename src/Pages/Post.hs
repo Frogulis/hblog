@@ -14,7 +14,7 @@ import qualified Repository as P (title)
 import Pages.Default (pageTemplate)
 
 postPage :: PostRecord -> Reader BlogConfig H.Html
-postPage postRecord = postTemplate postRecord >>= pageTemplate (P.title postRecord)
+postPage postRecord = postTemplate postRecord >>= pageTemplate 1 (P.title postRecord)
 
 postTemplate :: PostRecord -> Reader BlogConfig H.Html
 postTemplate (PostRecord pPostId pTitle author content _ publishDate) = return (do

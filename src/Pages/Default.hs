@@ -10,40 +10,43 @@ import qualified Text.Blaze.Html5.Attributes as A
 import BlogConfig
 import Repository (PostId)
 
-pageTemplate :: String -> H.Html -> Reader BlogConfig H.Html
-pageTemplate pTitle body = do
+pageTemplate :: Int -> String -> H.Html -> Reader BlogConfig H.Html
+pageTemplate depth pTitle body = do
     config <- ask
     return (do
         H.html $ do
             H.head $ do
                 H.title $ H.toHtml $ title config ++ " - " ++ pTitle
-                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "../files/fonts/nunito.css"
-                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "../files/styles/lit.css"
-                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "../files/styles/custom.css"
+                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href (deepen depth "files/fonts/nunito.css")
+                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href (deepen depth "files/styles/lit.css")
+                H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href (deepen depth "files/styles/custom.css")
             H.body ! A.class_ "c" $ do
-                H.a ! A.href "../home" $ H.h1 $ H.toHtml $ title config
-                header
+                H.a ! A.href (deepen depth "home") $ H.h1 $ H.toHtml $ title config
+                header depth
                 H.hr
                 H.div $ do
                     body
                 )
 
-header = H.div ! A.class_ "row" $ do
-    simpleLink "../posts/latest" "Latest post"
-    simpleLink "../archive/0" "Archive"
-    simpleLink "../about" "About this blog"
+deepen depth link =
+    H.toValue $ concat (replicate depth "../") ++ link
+
+header depth = H.div ! A.class_ "row" $ do
+    simpleLink (deepen depth "posts/latest") "Latest post"
+    simpleLink (deepen depth "archive/0") "Archive"
+    simpleLink (deepen depth "about") "About this blog"
 
 simpleLink path text = H.div ! A.class_ "col" $ H.a ! A.href path $ text
 
 errorPage :: Int -> String -> Reader BlogConfig H.Html
-errorPage sts msg = (return . H.h3) (H.toHtml $ show sts ++ ":" ++ msg) >>= pageTemplate "Error"
+errorPage sts msg = (return . H.h3) (H.toHtml $ show sts ++ ":" ++ msg) >>= pageTemplate 0 "Error"
 
 homePage :: Reader BlogConfig H.Html
 homePage = do
     html <- return (do
         H.h3 "Welcome to the blog"
         H.p "Watch this space for posts!")
-    pageTemplate "Home" html
+    pageTemplate 0 "Home" html
 
 aboutHblogPage :: Reader BlogConfig H.Html
 aboutHblogPage = do
@@ -56,7 +59,7 @@ aboutHblogPage = do
             H.b "Happstack-lite and Blaze"
             " for templating"
         H.p "It uses the tiny lit.css library, as well as the Nunito font")
-    pageTemplate "About hblog" html
+    pageTemplate 0 "About hblog" html
 
 aboutPage :: Reader BlogConfig H.Html
 aboutPage = do
@@ -65,7 +68,7 @@ aboutPage = do
         H.h3 $ H.toHtml $ "About " ++ title config
         H.p $ H.toHtml $ "Maintained by " ++ maintainer config
         H.p $ H.toHtml $ description config)
-    pageTemplate "About this blog" html
+    pageTemplate 0 "About this blog" html
 
 archivePage :: Int -> (Int, [(PostId, String)]) -> Reader BlogConfig H.Html
 archivePage pageNo (totalPages, records) = do
@@ -75,7 +78,7 @@ archivePage pageNo (totalPages, records) = do
         pageButtons totalPages pageNo
         archiveList records
         pageButtons totalPages pageNo)
-    pageTemplate "Archive" html
+    pageTemplate 1 "Archive" html
 
 archiveList :: [(PostId, String)] -> H.Html
 archiveList records = case records of
